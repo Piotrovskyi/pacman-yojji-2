@@ -87,91 +87,56 @@ function Game() {
 
   let pacmanCurrentIndex = 490;
 
-  function canMoveLeft() {
-    return (
-      pacmanCurrentIndex % width !== 0 &&
-      layout[pacmanCurrentIndex - 1] !== EntityEnum.WALL &&
-      layout[pacmanCurrentIndex - 1] !== EntityEnum.GHOST_LAIR
-    );
-  }
-
-  function canMoveUp() {
-    return (
-      pacmanCurrentIndex - width >= 0 &&
-      layout[pacmanCurrentIndex - width] !== EntityEnum.WALL &&
-      layout[pacmanCurrentIndex - width] !== EntityEnum.GHOST_LAIR
-    );
-  }
-
-  function canMoveRight() {
-    return (
-      pacmanCurrentIndex % width < width - 1 &&
-      layout[pacmanCurrentIndex + 1] !== EntityEnum.WALL &&
-      layout[pacmanCurrentIndex + 1] !== EntityEnum.GHOST_LAIR
-    );
-  }
-
-  function canMoveDown() {
-    return (
-      pacmanCurrentIndex + width < width * width &&
-      layout[pacmanCurrentIndex + width] !== EntityEnum.WALL &&
-      layout[pacmanCurrentIndex + width] !== EntityEnum.GHOST_LAIR
-    );
-  }
-
-  function left() {
-    pacmanCurrentIndex -= 1;
-
-    if (pacmanCurrentIndex - 1 === 363) {
-      pacmanCurrentIndex = 391;
-    }
-
-    movePacman();
-  }
-
-  function up() {
-    pacmanCurrentIndex -= width;
-
-    movePacman();
-  }
-
-  function right() {
-    pacmanCurrentIndex += 1;
-
-    if (pacmanCurrentIndex + 1 === 392) {
-      pacmanCurrentIndex = 364;
-    }
-
-    movePacman();
-  }
-
-  function down() {
-    pacmanCurrentIndex += width;
-
-    movePacman();
-  }
-
-  function moveInCurrentDirection() {
-    switch (pacmanDirection) {
+  function canMove(direction) {
+    switch (direction) {
       case DirectionsEnum.LEFT:
-        if (canMoveLeft()) {
-          left();
+        return (
+          pacmanCurrentIndex % width !== 0 &&
+          layout[pacmanCurrentIndex - 1] !== EntityEnum.WALL &&
+          layout[pacmanCurrentIndex - 1] !== EntityEnum.GHOST_LAIR
+        );
+      case DirectionsEnum.RIGHT:
+        return (
+          pacmanCurrentIndex % width < width - 1 &&
+          layout[pacmanCurrentIndex + 1] !== EntityEnum.WALL &&
+          layout[pacmanCurrentIndex + 1] !== EntityEnum.GHOST_LAIR
+        );
+      case DirectionsEnum.UP:
+        return (
+          pacmanCurrentIndex - width >= 0 &&
+          layout[pacmanCurrentIndex - width] !== EntityEnum.WALL &&
+          layout[pacmanCurrentIndex - width] !== EntityEnum.GHOST_LAIR
+        );
+      case DirectionsEnum.DOWN:
+        return (
+          pacmanCurrentIndex + width < width * width &&
+          layout[pacmanCurrentIndex + width] !== EntityEnum.WALL &&
+          layout[pacmanCurrentIndex + width] !== EntityEnum.GHOST_LAIR
+        );
+      default:
+        return false;
+    }
+  }
+
+  function moveTo(direction) {
+    switch (direction) {
+      case DirectionsEnum.LEFT:
+        pacmanCurrentIndex -= 1;
+        if (pacmanCurrentIndex - 1 === 363) {
+          pacmanCurrentIndex = 391;
         }
         break;
       case DirectionsEnum.RIGHT:
-        if (canMoveRight()) {
-          right();
+        pacmanCurrentIndex += 1;
+        if (pacmanCurrentIndex + 1 === 392) {
+          pacmanCurrentIndex = 364;
         }
         break;
       case DirectionsEnum.UP:
-        if (canMoveUp()) {
-          up();
-        }
+        pacmanCurrentIndex -= width;
         break;
       case DirectionsEnum.DOWN:
-        if (canMoveDown()) {
-          down();
-        }
+        pacmanCurrentIndex += width;
         break;
       default:
         break;
@@ -208,50 +173,39 @@ function Game() {
     }
   }
 
-  function checkForGameOver() {
-    if (
-      ghosts.some(
-        (ghost) => ghost.currentIndex === pacmanCurrentIndex && !ghost.isScared
-      )
-    ) {
-      gameOver = true;
-      gameOverStatus = "You LOSE!";
-    }
-  }
-
   function checkForWin() {
-    console.log('pacDotsLeft', pacDotsLeft)
     if (pacDotsLeft === 0) {
       gameOver = true;
       gameOverStatus = "You WON!";
     }
   }
 
-  function movePacman() {
-    powerPelletEaten();
-    pacDotEaten();
-    checkForGameOver();
-    checkForWin();
+  function ghostEaten() {
+    const ghost = ghosts.find(
+      (ghost) => ghost.currentIndex === pacmanCurrentIndex
+    );
+
+    if (ghost && ghost.isScared) {
+      score += 100;
+      ghost.currentIndex = ghost.startIndex;
+    }
+    if (ghost && !ghost.isScared) {
+      gameOver = true;
+      gameOverStatus = "You LOSE!";
+    }
   }
 
   function moveGhost(ghost) {
-    // ghost.timerId = setInterval(function () {
     let direction = directions[Math.floor(Math.random() * directions.length)];
-    //if the next square your ghost is going to go to does not have a ghost and does not have a wall
-    if (
-      !ghosts.some((g) => g.currentIndex === ghost.currentIndex + direction) &&
-      layout[ghost.currentIndex + direction] !== EntityEnum.WALL
-    ) {
-      // remove the ghosts classes
-      layout[ghost.currentIndex] = EntityEnum.EMPTY;
-      // move into that space
-      ghost.currentIndex += direction;
-    }
 
-    // if the ghost is currently scared and pacman is on it
-    if (ghost.isScared && ghost.currentIndex === pacmanCurrentIndex) {
-      ghost.currentIndex = ghost.startIndex;
-      score += 100;
+    // if the next square your ghost is going to go to does not have a ghost and does not have a wall
+    const nextPosition = ghost.currentIndex + direction;
+
+    if (
+      !ghosts.some((g) => g.currentIndex === nextPosition) &&
+      layout[nextPosition] !== EntityEnum.WALL
+    ) {
+      ghost.currentIndex += direction;
     }
   }
 
@@ -259,89 +213,48 @@ function Game() {
     pacmanNewDirection = direction;
   }
 
+  const gameState = () => ({
+    layout,
+    pacmanCurrentIndex,
+    ghosts,
+    gameOverStatus,
+    score,
+    gameOver,
+  });
+
   function tick() {
     if (gameOver) {
-      return {
-        layout,
-        pacmanCurrentIndex,
-        ghosts,
-        gameOverStatus,
-        score,
-        gameOver,
-      };
+      return gameState();
     }
-    console.log("render");
-    ghosts.forEach((ghost) => {
-      moveGhost(ghost);
-      checkForGameOver();
-    });
+
+    ghosts.forEach(moveGhost);
 
     // 1) check if can move in direction
     // 2) if can move - move
     // 3) if can't move - continue moving in current direction
 
-    switch (pacmanNewDirection) {
-      case DirectionsEnum.LEFT:
-        if (canMoveLeft()) {
-          left();
-          pacmanDirection = pacmanNewDirection;
-        } else {
-          moveInCurrentDirection();
-        }
-        break;
-      case DirectionsEnum.RIGHT:
-        if (canMoveRight()) {
-          right();
-          pacmanDirection = pacmanNewDirection;
-        } else {
-          moveInCurrentDirection();
-        }
-        break;
-      case DirectionsEnum.UP:
-        if (canMoveUp()) {
-          up();
-          pacmanDirection = pacmanNewDirection;
-        } else {
-          moveInCurrentDirection();
-        }
-        break;
-      case DirectionsEnum.DOWN:
-        if (canMoveDown()) {
-          down();
-          pacmanDirection = pacmanNewDirection;
-        } else {
-          moveInCurrentDirection();
-        }
-        break;
-      default:
-        break;
+    if (canMove(pacmanNewDirection)) {
+      moveTo(pacmanNewDirection);
+      pacmanDirection = pacmanNewDirection;
+    } else {
+      if (canMove(pacmanDirection)) {
+        moveTo(pacmanDirection);
+      }
     }
 
-    return {
-      layout,
-      pacmanCurrentIndex,
-      ghosts,
-      gameOver,
-      gameOverStatus,
-      score,
-    };
+    powerPelletEaten();
+    pacDotEaten();
+    ghostEaten();
+    checkForWin();
+
+    return gameState();
   }
 
   function init() {
-    return {
-      layout,
-      pacmanCurrentIndex,
-      ghosts,
-      gameOver,
-      gameOverStatus,
-      score,
-    };
+    return gameState();
   }
 
   return {
-    // layout,
-    // pacmanCurrentIndex,
-    // ghosts,
     init,
     tick,
     setDirection,
@@ -396,7 +309,7 @@ function drawBoard(layout, pacmanCurrentIndex, ghosts) {
 
 // game part
 
-const FPS = 1000;
+const FPS = 7;
 
 function run() {
   const game = Game();
