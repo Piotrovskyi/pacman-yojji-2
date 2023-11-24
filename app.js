@@ -31,6 +31,8 @@ const DirectionsEnum = {
   DOWN: 3,
 };
 
+const SCARED_GHOST_TICS = 50;
+
 function Game() {
   const width = 28;
   let gameOver = false;
@@ -38,6 +40,7 @@ function Game() {
   let pacmanDirection = null;
   let pacmanNewDirection = null;
   let score = 0;
+  let scaredCountdown = 0;
 
   const layout = [
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -162,13 +165,7 @@ function Game() {
         ghost.isScared = true;
       });
 
-      // TODO redo timeout to renders quantity
-      setTimeout(() => {
-        ghosts.forEach((ghost) => {
-          ghost.isScared = false;
-        });
-      }, 10000);
-
+      scaredCountdown = SCARED_GHOST_TICS;
       layout[pacmanCurrentIndex] = EntityEnum.EMPTY;
     }
   }
@@ -246,6 +243,15 @@ function Game() {
     pacDotEaten();
     ghostEaten();
     checkForWin();
+
+    if (scaredCountdown > 0) {
+      scaredCountdown--;
+      if (scaredCountdown === 0) {
+        ghosts.forEach((ghost) => {
+          ghost.isScared = false;
+        });
+      }
+    }
 
     return gameState();
   }
