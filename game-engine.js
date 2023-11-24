@@ -77,7 +77,9 @@ function Game() {
     1, 1, 1, 1, 1, 1, 1, 1, 1,
   ];
 
-  let pacDotsLeft = layout.filter((cell) => cell === EntityEnum.PAC_DOT).length;
+  let pacDotsLeft = layout.filter(
+    (cell) => cell === EntityEnum.PAC_DOT || cell === EntityEnum.POWER_PELLET
+  ).length;
 
   const directions = [-1, +1, width, -width]; // [left right up down]
 
@@ -266,5 +268,3 @@ function Game() {
     setDirection,
   };
 }
-
-
