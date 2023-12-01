@@ -1,5 +1,7 @@
 const FPS = 7;
 
+let status = 0;
+
 const grid = document.querySelector(".grid");
 const squares = [];
 
@@ -25,6 +27,9 @@ function setClassIfDifferent(el, value) {
 }
 
 function renderEntity(entity, i) {
+  squares[i].textContent = i;
+  squares[i].style = "font-size: 6px; display: flex; justify-content: center; align-items: center;"
+
   switch (entity) {
     case EntityEnum.WALL:
       setClassIfDifferent(squares[i], "wall");
@@ -67,16 +72,21 @@ function run() {
     initialState.ghosts
   );
 
-  const timer = setInterval(() => {
+  let timer = null;
+
+  function go() {
     const newState = game.tick();
     if (newState.gameOver) {
-      clearInterval(timer);
+      if (timer) {
+        clearInterval(timer);
+      }
       alert(newState.gameOverStatus + " " + newState.score);
       return;
     }
     document.getElementById("score").innerHTML = newState.score;
     drawBoard(newState.layout, newState.pacmanCurrentIndex, newState.ghosts);
-  }, 1000 / FPS);
+  }
+
 
   function handleKey(e) {
     if (directions[e.keyCode] !== undefined) {
@@ -85,6 +95,25 @@ function run() {
   }
 
   document.addEventListener("keyup", handleKey);
+  document.getElementById('step').addEventListener("click", () => {
+    if (status === 0) {
+      go();
+    }
+  });
+  document.getElementById('pause').addEventListener("click", () => {
+    if (status === 1) {
+      if (timer) {
+        clearInterval(timer);
+      }
+      status = 0;
+    }
+  });
+  document.getElementById('play').addEventListener("click", () => {
+    if (status === 0) {
+      timer = setInterval(go, 1000 / FPS);
+      status = 1;
+    }
+  });
 }
 
 document.addEventListener("DOMContentLoaded", run);
