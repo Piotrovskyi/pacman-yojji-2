@@ -6,14 +6,22 @@ class Ghost {
     this.isScared = false;
     this.timerId = NaN;
     this.baseClass = baseClass;
-    this.direction = [DirectionsEnum.LEFT, DirectionsEnum.RIGHT, DirectionsEnum.UP, DirectionsEnum.DOWN][Math.floor(Math.random() * 4)];
+    this.direction = [
+      DirectionsEnum.LEFT,
+      DirectionsEnum.RIGHT,
+      DirectionsEnum.UP,
+      DirectionsEnum.DOWN,
+    ][Math.floor(Math.random() * 4)];
+    this.className = baseClass;
   }
 
-  get className() {
-    if (this.isScared) {
-      return "scared-" + this.baseClass;
+  set isScared(value) {
+    this._isScared = value;
+    if (value) {
+      this.className = "scared-" + this.baseClass;
+    } else {
+      this.className = this.baseClass;
     }
-    return this.baseClass;
   }
 }
 
@@ -26,10 +34,10 @@ const EntityEnum = {
 };
 
 const DirectionsEnum = {
-  LEFT: 'left',
-  RIGHT: 'right',
-  UP: 'up',
-  DOWN: 'down',
+  LEFT: "left",
+  RIGHT: "right",
+  UP: "up",
+  DOWN: "down",
 };
 
 const SCARED_GHOST_TICS = 50;
@@ -237,12 +245,23 @@ function Game() {
       [DirectionsEnum.RIGHT]: layout[position + 1],
     };
 
-
     const possibleMoves = {
-      [DirectionsEnum.UP]: allowedToStepOnTile(position, tiles[DirectionsEnum.UP]),
-      [DirectionsEnum.DOWN]: allowedToStepOnTile(position, tiles[DirectionsEnum.DOWN]),
-      [DirectionsEnum.LEFT]: allowedToStepOnTile(position, tiles[DirectionsEnum.LEFT]),
-      [DirectionsEnum.RIGHT]: allowedToStepOnTile(position, tiles[DirectionsEnum.RIGHT]),
+      [DirectionsEnum.UP]: allowedToStepOnTile(
+        position,
+        tiles[DirectionsEnum.UP]
+      ),
+      [DirectionsEnum.DOWN]: allowedToStepOnTile(
+        position,
+        tiles[DirectionsEnum.DOWN]
+      ),
+      [DirectionsEnum.LEFT]: allowedToStepOnTile(
+        position,
+        tiles[DirectionsEnum.LEFT]
+      ),
+      [DirectionsEnum.RIGHT]: allowedToStepOnTile(
+        position,
+        tiles[DirectionsEnum.RIGHT]
+      ),
     };
 
     // Ghosts are not allowed to turn around at crossroads
@@ -263,36 +282,30 @@ function Game() {
     let direction = ghost.direction;
     let newDirection = direction;
 
-    const possibleMoves = determinePossibleMoves(ghost.currentIndex, direction, layout);
+    const possibleMoves = determinePossibleMoves(
+      ghost.currentIndex,
+      direction,
+      layout
+    );
 
     const possibleMovesKeys = Object.keys(possibleMoves);
 
     if (Object.keys(possibleMovesKeys).length === 0) {
-      return
+      return;
     }
     if (Object.keys(possibleMovesKeys).length === 1) {
       newDirection = possibleMovesKeys[0];
     }
     if (Object.keys(possibleMovesKeys).length > 1) {
       newDirection = determineBestMove(
-        ghost, pacmanCurrentIndex, layout, possibleMoves
+        ghost,
+        pacmanCurrentIndex,
+        layout,
+        possibleMoves
       );
     }
     ghost.direction = newDirection;
     ghost.currentIndex += directionNewPostionByDirection[newDirection];
-
-
-    // let direction = directions[Math.floor(Math.random() * directions.length)];
-
-    // // if the next square your ghost is going to go to does not have a ghost and does not have a wall
-    // const nextPosition = ghost.currentIndex + direction;
-
-    // if (
-    //   !ghosts.some((g) => g.currentIndex === nextPosition) &&
-    //   layout[nextPosition] !== EntityEnum.WALL
-    // ) {
-    //   ghost.currentIndex += direction;
-    // }
   }
 
   function getTarget(ghost, pacman) {
@@ -332,43 +345,41 @@ function Game() {
       let pivotX = pacGrid.x;
       switch (pacmanDirection) {
         case DirectionsEnum.UP:
-          pivotX = pacGrid.x
+          pivotX = pacGrid.x;
           break;
         case DirectionsEnum.DOWN:
-          pivotX = pacGrid.x
+          pivotX = pacGrid.x;
           break;
         case DirectionsEnum.LEFT:
-          pivotX = pacGrid.x - 2
+          pivotX = pacGrid.x - 2;
           break;
         case DirectionsEnum.RIGHT:
-          pivotX = pacGrid.x + 2
+          pivotX = pacGrid.x + 2;
           break;
         default:
-          pivotX = pacGrid.x
+          pivotX = pacGrid.x;
       }
       const blinkyGrid = flatPostionToGridPosition(blinky.currentIndex);
       const targetX = pivotX + (pivotX - blinkyGrid.x);
       return targetX + (blinkyGrid.y - pacGrid.y) * width;
     }
 
-
-    return pacman // todo - implement
+    return pacman; // todo - implement
   }
 
-  function determineBestMove(
-    ghost, pacman, layout, possibleMoves
-  ) {
+  function determineBestMove(ghost, pacman, layout, possibleMoves) {
     let bestDistance = ghost.isScared ? 0 : Infinity;
     let bestMove;
     const target = getTarget(ghost, pacman, layout);
 
     Object.keys(possibleMoves).forEach((move) => {
       const distance = calculateDistance(
-        ghost.currentIndex + directionNewPostionByDirection[move], target,
+        ghost.currentIndex + directionNewPostionByDirection[move],
+        target
       );
-      const betterMove = (ghost.isScared)
-        ? (distance > bestDistance)
-        : (distance < bestDistance);
+      const betterMove = ghost.isScared
+        ? distance > bestDistance
+        : distance < bestDistance;
       if (betterMove) {
         bestDistance = distance;
         bestMove = move;
@@ -393,7 +404,8 @@ function Game() {
     const pacmanPosition = flatPostionToGridPosition(pacman);
     const ghostPosition = flatPostionToGridPosition(position);
     return Math.sqrt(
-      ((ghostPosition.x - pacmanPosition.x) ** 2) + ((ghostPosition.y - pacmanPosition.y) ** 2),
+      (ghostPosition.x - pacmanPosition.x) ** 2 +
+        (ghostPosition.y - pacmanPosition.y) ** 2
     );
   }
 
@@ -402,9 +414,9 @@ function Game() {
   }
 
   const gameState = () => ({
-    layout,
+    layout: [...layout],
     pacmanCurrentIndex,
-    ghosts,
+    ghosts: ghosts.map((ghost) => ({ ...ghost })),
     gameOverStatus,
     score,
     gameOver,
