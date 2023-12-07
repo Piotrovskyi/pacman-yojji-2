@@ -1,13 +1,14 @@
-const Game = require('./game-engine.js');
+const gameModule = require('./game-engine.js');
+const clientCode = require('./example-ai.js');
 
 function run() {
-  const game = Game();
+  const game = gameModule.Game();
   const initialState = game.init();
 
   let newState = null;
 
-  while(newState.gameOver === false) {
-    const userResponse = window.gameTick(
+  while(!newState?.gameOver) {
+    const userResponse = clientCode.gameTick(
       initialState.layout,
       initialState.pacmanCurrentIndex,
       initialState.ghosts

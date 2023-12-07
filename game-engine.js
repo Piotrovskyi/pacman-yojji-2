@@ -469,3 +469,12 @@ function Game() {
     setDirection,
   };
 }
+
+const isNode = typeof module !== "undefined" && module.exports;
+if (isNode) {
+  module.exports = {
+    Game,
+    EntityEnum,
+    DirectionsEnum,
+  };
+}
